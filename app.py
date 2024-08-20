@@ -74,7 +74,7 @@ async def on_chat_start():
         files = await cl.AskFileMessage(
             content="Please upload a Text File file to begin!",
             accept=["text/plain"],
-            max_size_mb=20,
+            max_size_mb=2,
             timeout=180,
         ).send()
 

@@ -56,8 +56,13 @@ def process_text_file(file: AskFileResponse):
     with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as temp_file:
         temp_file_path = temp_file.name
 
+    with open(file.path, "rb") as f:
+        content = f.read()
+
     with open(temp_file_path, "wb") as f:
-        f.write(file.content)
+        f.write(content)
+
+        #file response no longer has a content field
 
     text_loader = TextFileLoader(temp_file_path)
     documents = text_loader.load_documents()
@@ -81,7 +86,7 @@ async def on_chat_start():
     file = files[0]
 
     msg = cl.Message(
-        content=f"Processing `{file.name}`...", disable_human_feedback=True
+        content=f"Processing `{file.name}`..."
     )
     await msg.send()
 

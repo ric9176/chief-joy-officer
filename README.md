@@ -16,7 +16,7 @@ Today, we will repeat the same process - but powered by our Pythonic RAG impleme
 
 You'll notice a few differences in the `app.py` logic - as well as a few changes to the `aimakerspace` package to get things working smoothly with Chainlit.
 
-> NOTE: If you want to run this locally - be sure to use `uv run chainlit run app.py` to start the application outside of Docker.
+> NOTE: If you want to run this locally - be sure to use `uv sync`, and then `uv run chainlit run app.py` to start the application outside of Docker.
 
 ## Reference Diagram (It's Busy, but it works)
 
@@ -236,7 +236,7 @@ With that - you've created a Chainlit application that moves our Pythonic RAG no
 
 Due to the way the repository is created - it should be straightforward to deploy this to a Hugging Face Space!
 
-> NOTE: If you wish to go through the local deployments using `chainlit run app.py` and Docker - please feel free to do so!
+> NOTE: If you wish to go through the local deployments using `uv run chainlit run app.py` and Docker - please feel free to do so!
 
 <details>
     <summary>Creating a Hugging Face Space</summary>

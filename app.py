@@ -52,24 +52,34 @@ text_splitter = CharacterTextSplitter()
 
 def process_file(file: AskFileResponse):
     import tempfile
-
-    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=file.name.split('.')[-1]) as temp_file:
-        temp_file_path = temp_file.name
-
-    with open(file.path, "rb") as f:
-        content = f.read()
-
-    with open(temp_file_path, "wb") as f:
-        f.write(content)
-
-    if file.name.lower().endswith('.pdf'):
-        loader = PDFLoader(temp_file_path)
-    else:
-        loader = TextFileLoader(temp_file_path)
+    import shutil
+    
+    print(f"Processing file: {file.name}")
+    
+    # Create a temporary file with the correct extension
+    suffix = f".{file.name.split('.')[-1]}"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+        # Copy the uploaded file content to the temporary file
+        shutil.copyfile(file.path, temp_file.name)
+        print(f"Created temporary file at: {temp_file.name}")
         
-    documents = loader.load_documents()
-    texts = text_splitter.split_texts(documents)
-    return texts
+        # Create appropriate loader
+        if file.name.lower().endswith('.pdf'):
+            loader = PDFLoader(temp_file.name)
+        else:
+            loader = TextFileLoader(temp_file.name)
+            
+        try:
+            # Load and process the documents
+            documents = loader.load_documents()
+            texts = text_splitter.split_texts(documents)
+            return texts
+        finally:
+            # Clean up the temporary file
+            try:
+                os.unlink(temp_file.name)
+            except Exception as e:
+                print(f"Error cleaning up temporary file: {e}")
 
 
 @cl.on_chat_start

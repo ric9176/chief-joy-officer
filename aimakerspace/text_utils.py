@@ -67,16 +67,27 @@ class PDFLoader:
     def __init__(self, path: str):
         self.documents = []
         self.path = path
+        print(f"PDFLoader initialized with path: {self.path}")
 
     def load(self):
-        if os.path.isdir(self.path):
-            self.load_directory()
-        elif os.path.isfile(self.path) and self.path.lower().endswith('.pdf'):
+        print(f"Loading PDF from path: {self.path}")
+        print(f"Path exists: {os.path.exists(self.path)}")
+        print(f"Is file: {os.path.isfile(self.path)}")
+        print(f"Is directory: {os.path.isdir(self.path)}")
+        print(f"File permissions: {oct(os.stat(self.path).st_mode)[-3:]}")
+        
+        try:
+            # Try to open the file first to verify access
+            with open(self.path, 'rb') as test_file:
+                pass
+            
+            # If we can open it, proceed with loading
             self.load_file()
-        else:
-            raise ValueError(
-                "Provided path is neither a valid directory nor a PDF file."
-            )
+            
+        except IOError as e:
+            raise ValueError(f"Cannot access file at '{self.path}': {str(e)}")
+        except Exception as e:
+            raise ValueError(f"Error processing file at '{self.path}': {str(e)}")
 
     def load_file(self):
         with open(self.path, 'rb') as file:

@@ -1,7 +1,7 @@
 import os
 from typing import List
 from chainlit.types import AskFileResponse
-from aimakerspace.text_utils import CharacterTextSplitter, TextFileLoader
+from aimakerspace.text_utils import CharacterTextSplitter, TextFileLoader, PDFLoader
 from aimakerspace.openai_utils.prompts import (
     UserRolePrompt,
     SystemRolePrompt,
@@ -50,10 +50,10 @@ class RetrievalAugmentedQAPipeline:
 text_splitter = CharacterTextSplitter()
 
 
-def process_text_file(file: AskFileResponse):
+def process_file(file: AskFileResponse):
     import tempfile
 
-    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as temp_file:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=file.name.split('.')[-1]) as temp_file:
         temp_file_path = temp_file.name
 
     with open(file.path, "rb") as f:
@@ -62,10 +62,12 @@ def process_text_file(file: AskFileResponse):
     with open(temp_file_path, "wb") as f:
         f.write(content)
 
-        #file response no longer has a content field
-
-    text_loader = TextFileLoader(temp_file_path)
-    documents = text_loader.load_documents()
+    if file.name.lower().endswith('.pdf'):
+        loader = PDFLoader(temp_file_path)
+    else:
+        loader = TextFileLoader(temp_file_path)
+        
+    documents = loader.load_documents()
     texts = text_splitter.split_texts(documents)
     return texts
 
@@ -77,8 +79,8 @@ async def on_chat_start():
     # Wait for the user to upload a file
     while files == None:
         files = await cl.AskFileMessage(
-            content="Please upload a Text File file to begin!",
-            accept=["text/plain"],
+            content="Please upload a Text or PDF file to begin!",
+            accept=["text/plain", "application/pdf"],
             max_size_mb=2,
             timeout=180,
         ).send()
@@ -91,7 +93,7 @@ async def on_chat_start():
     await msg.send()
 
     # load the file
-    texts = process_text_file(file)
+    texts = process_file(file)
 
     print(f"Processing {len(texts)} text chunks")
 

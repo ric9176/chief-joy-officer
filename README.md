@@ -339,6 +339,8 @@ Upload a PDF file of the recent DeepSeek-R1 paper and ask the following question
 
 Does this application pass your vibe check? Are there any immediate pitfalls you're noticing?
 
+- It performs well on the first question or when specifically asking about the paper using the title. However, it doesn't perform well when the questions are more ambiguous such as "What is this paper about?". It also needed some nudging to get the answer to the second question, so not fully passing the vibe check.
+
 ## 🚧 CHALLENGE MODE 🚧
 
 For the challenge mode, please instead create a simple FastAPI backend with a simple React (or any other JS framework) frontend.

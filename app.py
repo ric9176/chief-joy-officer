@@ -10,15 +10,29 @@ from langchain.schema.runnable.config import RunnableConfig
 from langchain_community.tools.tavily_search import TavilySearchResults
 
 import chainlit as cl
+from rag import create_rag_pipeline, add_urls_to_vectorstore
+
+# Initialize RAG pipeline
+rag_components = create_rag_pipeline(collection_name="london_events")
+
+# Add some initial URLs to the vector store
+urls = [
+    "https://www.timeout.com/london/things-to-do-in-london-this-weekend",
+    "https://www.timeout.com/london/london-events-in-march"
+]
+add_urls_to_vectorstore(
+    rag_components["vector_store"],
+    rag_components["text_splitter"],
+    urls
+)
 
 class AgentState(TypedDict):
-  messages: Annotated[list, add_messages]
+    messages: Annotated[list, add_messages]
+    context: list  # Store retrieved context
 
 tavily_tool = TavilySearchResults(max_results=5)
 tool_belt = [tavily_tool]
-# Initialize the language models
-# llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0)
-# final_llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0).with_config(tags=["final_node"])
+
 model = ChatOpenAI(model="gpt-4o", temperature=0)
 model = model.bind_tools(tool_belt)
 
@@ -27,16 +41,34 @@ SYSTEM_PROMPT = SystemMessage(content="""
 You are a helpful AI assistant that answers questions clearly and concisely.
 If you don't know something, simply say you don't know.
 Be engaging and professional in your responses.
+Use the provided context when available to give accurate information about events and activities.
 """)
 
+def retrieve(state: AgentState):
+    """Retrieve relevant context from the vector store"""
+    # Get the last message's content
+    last_message = state["messages"][-1]
+    if isinstance(last_message, HumanMessage):
+        # Get relevant documents
+        docs = rag_components["retriever"].get_relevant_documents(last_message.content)
+        # Extract the content from documents
+        context = [doc.page_content for doc in docs]
+        return {"context": context}
+    return {"context": []}
 
 def call_model(state: AgentState):
-    messages = state["messages"]
+    messages = [SYSTEM_PROMPT] + state["messages"]
+    
+    # Add context to system message if available
+    if state.get("context"):
+        context_str = "\n".join(state["context"])
+        context_message = SystemMessage(content=f"Context:\n{context_str}")
+        messages = [messages[0], context_message] + messages[1:]
+    
     response = model.invoke(messages)
-    return {"messages" : [response]}
+    return {"messages": [response]}
 
 tool_node = ToolNode(tool_belt)
-
 
 # Simple flow control - always go to final
 def should_continue(state):
@@ -50,19 +82,25 @@ def should_continue(state):
 # Create the graph
 builder = StateGraph(AgentState)
 
-builder.set_entry_point("agent")
+# Add nodes
+builder.add_node("retrieve", retrieve)
 builder.add_node("agent", call_model)
 builder.add_node("action", tool_node)
+
 # Add edges
+builder.set_entry_point("retrieve")
+builder.add_edge("retrieve", "agent")
 builder.add_conditional_edges(
     "agent",
     should_continue,
 )
-
 builder.add_edge("action", "agent")
 
 # Compile the graph
-graph = builder.compile()
+compiled_graph = builder.compile()  # Changed variable name to be more explicit
+
+# Export the graph for visualization
+graph = compiled_graph  # This is what we'll import in the script
 
 @cl.on_chat_start
 async def on_chat_start():
@@ -87,15 +125,20 @@ async def on_message(message: cl.Message):
     
     # Stream the response
     async for chunk in graph.astream(
-        {"messages": [HumanMessage(content=message.content)]},
+        {"messages": [HumanMessage(content=message.content)], "context": []},
         config=RunnableConfig(callbacks=[cb], **config)
     ):
         for node, values in chunk.items():
-            if values.get("messages"):
+            if node == "retrieve":
+                loading_msg = cl.Message(content="🔍 Searching knowledge base...", author="System")
+                await loading_msg.send()
+            elif values.get("messages"):
                 last_message = values["messages"][-1]
                 # Check for tool calls in additional_kwargs
                 if hasattr(last_message, "additional_kwargs") and last_message.additional_kwargs.get("tool_calls"):
                     tool_name = last_message.additional_kwargs["tool_calls"][0]["function"]["name"]
+                    if loading_msg:
+                        await loading_msg.remove()
                     loading_msg = cl.Message(
                         content=f"🔍 Using {tool_name}...",
                         author="Tool"

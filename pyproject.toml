@@ -11,4 +11,11 @@ dependencies = [
     "pydantic==2.10.1",
     "pypdf2>=3.0.1",
     "websockets>=14.2",
+    "langchain-openai>=0.0.5",
+    "langgraph>=0.0.19",
+    "langchain>=0.1.8",
+    "langchain-core>=0.1.23",
+    "langchain-community>=0.0.19",
+    "tavily-python>=0.3.1",
+    "typing-extensions>=4.9.0",
 ]

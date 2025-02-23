@@ -83,6 +83,8 @@ async def on_message(message: cl.Message):
     final_answer = cl.Message(content="")
     await final_answer.send()
     
+    loading_msg = None  # Initialize reference to loading message
+    
     # Stream the response
     async for chunk in graph.astream(
         {"messages": [HumanMessage(content=message.content)]},
@@ -91,9 +93,19 @@ async def on_message(message: cl.Message):
         for node, values in chunk.items():
             if values.get("messages"):
                 last_message = values["messages"][-1]
-                
+                # Check for tool calls in additional_kwargs
+                if hasattr(last_message, "additional_kwargs") and last_message.additional_kwargs.get("tool_calls"):
+                    tool_name = last_message.additional_kwargs["tool_calls"][0]["function"]["name"]
+                    loading_msg = cl.Message(
+                        content=f"🔍 Using {tool_name}...",
+                        author="Tool"
+                    )
+                    await loading_msg.send()
                 # Only stream AI messages, skip tool outputs
-                if isinstance(last_message, AIMessage):
+                elif isinstance(last_message, AIMessage):
+                    if loading_msg:
+                        await loading_msg.remove()
+                        loading_msg = None
                     await final_answer.stream_token(last_message.content)
 
     await final_answer.send()

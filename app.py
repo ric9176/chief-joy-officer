@@ -8,6 +8,8 @@ from langgraph.graph.message import add_messages
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain.schema.runnable.config import RunnableConfig
 from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain.tools import Tool
+from langchain_core.tools import tool
 
 import chainlit as cl
 from rag import create_rag_pipeline, add_urls_to_vectorstore
@@ -30,41 +32,29 @@ class AgentState(TypedDict):
     messages: Annotated[list, add_messages]
     context: list  # Store retrieved context
 
-tavily_tool = TavilySearchResults(max_results=5)
-tool_belt = [tavily_tool]
+# Create a retrieve tool
+@tool
+def retrieve_context(query: str) -> list[str]:
+    """Searches the knowledge base for relevant information about events and activities. Use this when you need specific details about events."""
+    return [doc.page_content for doc in rag_components["retriever"].get_relevant_documents(query)]
 
-model = ChatOpenAI(model="gpt-4o", temperature=0)
-model = model.bind_tools(tool_belt)
+tavily_tool = TavilySearchResults(max_results=5)
+tool_belt = [tavily_tool, retrieve_context]
+
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
+model = llm.bind_tools(tool_belt)
 
 # Define system prompt
 SYSTEM_PROMPT = SystemMessage(content="""
 You are a helpful AI assistant that answers questions clearly and concisely.
 If you don't know something, simply say you don't know.
 Be engaging and professional in your responses.
-Use the provided context when available to give accurate information about events and activities.
+Use the retrieve_context tool when you need specific information about events and activities.
+Use the tavily_search tool for general web searches.
 """)
-
-def retrieve(state: AgentState):
-    """Retrieve relevant context from the vector store"""
-    # Get the last message's content
-    last_message = state["messages"][-1]
-    if isinstance(last_message, HumanMessage):
-        # Get relevant documents
-        docs = rag_components["retriever"].get_relevant_documents(last_message.content)
-        # Extract the content from documents
-        context = [doc.page_content for doc in docs]
-        return {"context": context}
-    return {"context": []}
 
 def call_model(state: AgentState):
     messages = [SYSTEM_PROMPT] + state["messages"]
-    
-    # Add context to system message if available
-    if state.get("context"):
-        context_str = "\n".join(state["context"])
-        context_message = SystemMessage(content=f"Context:\n{context_str}")
-        messages = [messages[0], context_message] + messages[1:]
-    
     response = model.invoke(messages)
     return {"messages": [response]}
 
@@ -82,14 +72,12 @@ def should_continue(state):
 # Create the graph
 builder = StateGraph(AgentState)
 
-# Add nodes
-builder.add_node("retrieve", retrieve)
+# Remove retrieve node and modify graph structure
 builder.add_node("agent", call_model)
 builder.add_node("action", tool_node)
 
-# Add edges
-builder.set_entry_point("retrieve")
-builder.add_edge("retrieve", "agent")
+# Update edges
+builder.set_entry_point("agent")
 builder.add_conditional_edges(
     "agent",
     should_continue,

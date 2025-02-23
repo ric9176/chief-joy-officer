@@ -4,20 +4,17 @@ import sys
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app import graph  # This will import the compiled graph
+from app import graph  
 from langchain_core.runnables.graph import MermaidDrawMethod
 
-# Create docs directory if it doesn't exist
 docs_dir = "docs"
 if not os.path.exists(docs_dir):
     os.makedirs(docs_dir)
 
-# Generate and save the graph visualization
 graph_image = graph.get_graph().draw_mermaid_png(
     draw_method=MermaidDrawMethod.API,
 )
 
-# Save the image
 with open(os.path.join(docs_dir, "graph.png"), "wb") as f:
     f.write(graph_image)
 

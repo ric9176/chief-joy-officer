@@ -2,18 +2,11 @@ from typing import List, TypedDict
 from langchain_core.documents import Document
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
 from langchain_community.document_loaders import WebBaseLoader
 import tiktoken
-
-# Define state for our RAG pipeline
-class RAGState(TypedDict):
-    question: str
-    context: List[Document]
-    response: str
 
 def load_web_documents(urls: List[str]) -> List[Document]:
     """
@@ -63,28 +56,10 @@ def create_rag_pipeline(collection_name: str = "rag_collection"):
     # Create retriever
     retriever = vector_store.as_retriever(search_kwargs={"k": 2})
 
-    # Create chat prompt template
-    prompt_template = """Answer the question based on the following context. If you cannot find 
-    the answer in the context, say "I don't have enough information to answer that."
-
-    Context:
-    {context}
-
-    Question:
-    {question}
-
-    Answer:"""
-
-    chat_prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a helpful AI assistant that answers questions based on the provided context."),
-        ("human", prompt_template)
-    ])
-
     return {
         "vector_store": vector_store,
         "text_splitter": text_splitter,
-        "retriever": retriever,
-        "chat_prompt": chat_prompt
+        "retriever": retriever
     }
 
 def add_documents(vector_store, text_splitter, documents: List[Document]):

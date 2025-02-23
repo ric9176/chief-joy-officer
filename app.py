@@ -1,139 +1,99 @@
-import os
-from typing import List
-from chainlit.types import AskFileResponse
-from aimakerspace.text_utils import CharacterTextSplitter, TextFileLoader, PDFLoader
-from aimakerspace.openai_utils.prompts import (
-    UserRolePrompt,
-    SystemRolePrompt,
-    AssistantRolePrompt,
-)
-from aimakerspace.openai_utils.embedding import EmbeddingModel
-from aimakerspace.vectordatabase import VectorDatabase
-from aimakerspace.openai_utils.chatmodel import ChatOpenAI
+from typing import Annotated, TypedDict, Literal
+from langchain_openai import ChatOpenAI
+from langgraph.graph import StateGraph, START, END
+from langgraph.graph.message import MessagesState
+from langgraph.prebuilt import ToolNode
+from langgraph.graph.message import add_messages
+
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from langchain.schema.runnable.config import RunnableConfig
+from langchain_community.tools.tavily_search import TavilySearchResults
+
 import chainlit as cl
 
-system_template = """\
-Use the following context to answer a users question. If you cannot find the answer in the context, say you don't know the answer."""
-system_role_prompt = SystemRolePrompt(system_template)
+class AgentState(TypedDict):
+  messages: Annotated[list, add_messages]
 
-user_prompt_template = """\
-Context:
-{context}
+tavily_tool = TavilySearchResults(max_results=5)
+tool_belt = [tavily_tool]
+# Initialize the language models
+# llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0)
+# final_llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0).with_config(tags=["final_node"])
+model = ChatOpenAI(model="gpt-4o", temperature=0)
+model = model.bind_tools(tool_belt)
 
-Question:
-{question}
-"""
-user_role_prompt = UserRolePrompt(user_prompt_template)
-
-class RetrievalAugmentedQAPipeline:
-    def __init__(self, llm: ChatOpenAI(), vector_db_retriever: VectorDatabase) -> None:
-        self.llm = llm
-        self.vector_db_retriever = vector_db_retriever
-
-    async def arun_pipeline(self, user_query: str):
-        context_list = self.vector_db_retriever.search_by_text(user_query, k=4)
-
-        context_prompt = ""
-        for context in context_list:
-            context_prompt += context[0] + "\n"
-
-        formatted_system_prompt = system_role_prompt.create_message()
-
-        formatted_user_prompt = user_role_prompt.create_message(question=user_query, context=context_prompt)
-
-        async def generate_response():
-            async for chunk in self.llm.astream([formatted_system_prompt, formatted_user_prompt]):
-                yield chunk
-
-        return {"response": generate_response(), "context": context_list}
-
-text_splitter = CharacterTextSplitter()
+# Define system prompt
+SYSTEM_PROMPT = SystemMessage(content="""
+You are a helpful AI assistant that answers questions clearly and concisely.
+If you don't know something, simply say you don't know.
+Be engaging and professional in your responses.
+""")
 
 
-def process_file(file: AskFileResponse):
-    import tempfile
-    import shutil
-    
-    print(f"Processing file: {file.name}")
-    
-    # Create a temporary file with the correct extension
-    suffix = f".{file.name.split('.')[-1]}"
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
-        # Copy the uploaded file content to the temporary file
-        shutil.copyfile(file.path, temp_file.name)
-        print(f"Created temporary file at: {temp_file.name}")
-        
-        # Create appropriate loader
-        if file.name.lower().endswith('.pdf'):
-            loader = PDFLoader(temp_file.name)
-        else:
-            loader = TextFileLoader(temp_file.name)
-            
-        try:
-            # Load and process the documents
-            documents = loader.load_documents()
-            texts = text_splitter.split_texts(documents)
-            return texts
-        finally:
-            # Clean up the temporary file
-            try:
-                os.unlink(temp_file.name)
-            except Exception as e:
-                print(f"Error cleaning up temporary file: {e}")
+def call_model(state: AgentState):
+    messages = state["messages"]
+    response = model.invoke(messages)
+    return {"messages" : [response]}
 
+tool_node = ToolNode(tool_belt)
+
+
+# Simple flow control - always go to final
+def should_continue(state):
+  last_message = state["messages"][-1]
+
+  if last_message.tool_calls:
+    return "action"
+
+  return END
+
+# Create the graph
+builder = StateGraph(AgentState)
+
+builder.set_entry_point("agent")
+builder.add_node("agent", call_model)
+builder.add_node("action", tool_node)
+# Add edges
+builder.add_conditional_edges(
+    "agent",
+    should_continue,
+)
+
+builder.add_edge("action", "agent")
+
+# Compile the graph
+graph = builder.compile()
 
 @cl.on_chat_start
 async def on_chat_start():
-    files = None
-
-    # Wait for the user to upload a file
-    while files == None:
-        files = await cl.AskFileMessage(
-            content="Please upload a Text or PDF file to begin!",
-            accept=["text/plain", "application/pdf"],
-            max_size_mb=2,
-            timeout=180,
-        ).send()
-
-    file = files[0]
-
-    msg = cl.Message(
-        content=f"Processing `{file.name}`..."
-    )
-    await msg.send()
-
-    # load the file
-    texts = process_file(file)
-
-    print(f"Processing {len(texts)} text chunks")
-
-    # Create a dict vector store
-    vector_db = VectorDatabase()
-    vector_db = await vector_db.abuild_from_list(texts)
-    
-    chat_openai = ChatOpenAI()
-
-    # Create a chain
-    retrieval_augmented_qa_pipeline = RetrievalAugmentedQAPipeline(
-        vector_db_retriever=vector_db,
-        llm=chat_openai
-    )
-    
-    # Let the user know that the system is ready
-    msg.content = f"Processing `{file.name}` done. You can now ask questions!"
-    await msg.update()
-
-    cl.user_session.set("chain", retrieval_augmented_qa_pipeline)
-
+    await cl.Message("Hello! I'm your AI assistant. How can I help you today?").send()
 
 @cl.on_message
-async def main(message):
-    chain = cl.user_session.get("chain")
+async def on_message(message: cl.Message):
+    # Create configuration with thread ID
+    config = {
+        "configurable": {
+            "thread_id": cl.context.session.id,
+            "checkpoint_ns": "default_namespace"
+        }
+    }
+    
+    # Setup callback handler and final answer message
+    cb = cl.LangchainCallbackHandler()
+    final_answer = cl.Message(content="")
+    await final_answer.send()
+    
+    # Stream the response
+    async for chunk in graph.astream(
+        {"messages": [HumanMessage(content=message.content)]},
+        config=RunnableConfig(callbacks=[cb], **config)
+    ):
+        for node, values in chunk.items():
+            if values.get("messages"):
+                last_message = values["messages"][-1]
+                
+                # Only stream AI messages, skip tool outputs
+                if isinstance(last_message, AIMessage):
+                    await final_answer.stream_token(last_message.content)
 
-    msg = cl.Message(content="")
-    result = await chain.arun_pipeline(message.content)
-
-    async for stream_resp in result["response"]:
-        await msg.stream_token(stream_resp)
-
-    await msg.send()
+    await final_answer.send()

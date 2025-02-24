@@ -6,6 +6,8 @@ from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
 from langchain_community.document_loaders import WebBaseLoader
+from langchain_community.embeddings import HuggingFaceEmbeddings
+
 import tiktoken
 
 def load_web_documents(urls: List[str]) -> List[Document]:
@@ -22,9 +24,16 @@ def load_web_documents(urls: List[str]) -> List[Document]:
     return loader.load()
 
 def create_rag_pipeline(collection_name: str = "rag_collection"):
-    # Initialize embedding model
-    embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
-    embedding_dim = 1536  # Dimension for text-embedding-3-small
+    # OpenAI embedding model
+    # embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
+    # Fine tuned embedding model
+    embedding_model = HuggingFaceEmbeddings(
+        model_name="ric9176/cjo-ft-v0", 
+        model_kwargs={'device': 'cpu'},  # Or 'cuda' if using GPU
+        encode_kwargs={'normalize_embeddings': True}  # Optional: normalize the embeddings
+    )
+    # embedding_dim = 1536  # Dimension for text-embedding-3-small
+    embedding_dim = 1024  # Dimension for Snowflake/snowflake-arctic-embed-l
 
     # Initialize Qdrant client (in-memory for development)
     client = QdrantClient(":memory:")

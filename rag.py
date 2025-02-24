@@ -44,7 +44,7 @@ def create_rag_pipeline(collection_name: str = "rag_collection"):
 
     # Create text splitter for chunking
     def tiktoken_len(text):
-        tokens = tiktoken.encoding_for_model("gpt-4").encode(text)
+        tokens = tiktoken.encoding_for_model("gpt-4o-mini").encode(text)
         return len(tokens)
 
     text_splitter = RecursiveCharacterTextSplitter(

@@ -92,7 +92,7 @@ graph = compiled_graph  # This is what we'll import in the script
 
 @cl.on_chat_start
 async def on_chat_start():
-    await cl.Message("Hello! I'm your AI assistant. How can I help you today?").send()
+    await cl.Message("Hello! I'm your chief joy officer, here to help you with finding fun things to do in London! You can ask me anything but I'm particularly good at finding events and activities. What can I help you with today?").send()
 
 @cl.on_message
 async def on_message(message: cl.Message):

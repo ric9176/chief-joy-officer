@@ -1,0 +1,24 @@
+RAG System Evaluation Results
+==========================
+
+Test Dataset Size: 10 questions
+
+Test Questions:
+---------------
+1. Southbank Centre events this weekend
+2. What is the Imagine Festival at the Southbank Centre?
+3. What event is High Vis supporting at the Crystal Palace Bowl?
+4. What can you do for £24 in London?
+5. How can I get newsletters about the Chelsea Physic Garden's snowdrop festival and other events in London?
+6. Chelsea Physic Garden got what event this weekend?
+7. What activities are available at the Chelsea Physic Garden as mentioned in the newsletters?
+8. How can I find out about music concerts like the High Vis’s Electric Brixton show in London?
+9. What events in London in March 2025?
+10. What are some of the key events and activities planned in London for March 2025?
+11. What are some of the events and exhibitions happening in London this weekend that feature the work of Donald Rodney?
+12. What are some of the activities and events available at the Horniman Museum during the February half-term weekend for a tourist visiting London?
+
+Metric Scores:
+-------------
+| Metric                    | Score |
+|---------------------------|-------|

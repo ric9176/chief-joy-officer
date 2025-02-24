@@ -41,7 +41,7 @@ def retrieve_context(query: str) -> list[str]:
 tavily_tool = TavilySearchResults(max_results=5)
 tool_belt = [tavily_tool, retrieve_context]
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0)
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 model = llm.bind_tools(tool_belt)
 
 # Define system prompt

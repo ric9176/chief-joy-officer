@@ -7,7 +7,8 @@ Chief Joy Officer (CJO) is an AI-powered agent designed to enhance social experi
 ## Demo
 
 Check out the demo: [Loom Video](https://www.loom.com/share/3a8d6318c9d346b7a14681a0980c5aaa)
-Full write up here: https://docs.google.com/document/d/18een8Siwt-5lXyCZ79ovjxDOLFBP4eT2_aBlhFxUVTI/edit?usp=sharing
+
+Full write up here: [Google Doc](https://docs.google.com/document/d/18een8Siwt-5lXyCZ79ovjxDOLFBP4eT2_aBlhFxUVTI/edit?usp=sharing)
 
 ## Problem Statement
 

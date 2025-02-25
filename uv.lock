@@ -21,13 +21,14 @@ dependencies = [
     { name = "sentence-transformers" },
     { name = "tavily-python" },
     { name = "typing-extensions" },
+    { name = "uuid" },
     { name = "websockets" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "beautifulsoup4", specifier = "==4.13.3" },
-    { name = "chainlit", specifier = ">=2.0.4" },
+    { name = "chainlit", specifier = ">=2.2.1" },
     { name = "langchain", specifier = ">=0.1.8" },
     { name = "langchain-community", specifier = ">=0.0.19" },
     { name = "langchain-core", specifier = ">=0.1.23" },
@@ -41,6 +42,7 @@ requires-dist = [
     { name = "sentence-transformers", specifier = "==3.4.1" },
     { name = "tavily-python", specifier = ">=0.3.1" },
     { name = "typing-extensions", specifier = ">=4.9.0" },
+    { name = "uuid", specifier = "==1.30" },
     { name = "websockets", specifier = ">=14.2" },
 ]
 
@@ -205,7 +207,7 @@ wheels = [
 
 [[package]]
 name = "chainlit"
-version = "2.0.5"
+version = "2.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiofiles" },
@@ -231,9 +233,9 @@ dependencies = [
     { name = "uvicorn" },
     { name = "watchfiles" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1e/d8/7173caf3ca0d7480b3614e3126da9c592692d353764326fc0e1702b9eddd/chainlit-2.0.5.tar.gz", hash = "sha256:8af7746999d6641c69c33b67e5325e2d018432dd0b3306926d7435b862b0bfe2", size = 4646512 }
+sdist = { url = "https://files.pythonhosted.org/packages/5a/0d/19f66ced254c35cd0595ba064402a15c2ca3d3fba2a75f7ea75b52619871/chainlit-2.2.1.tar.gz", hash = "sha256:45bfc5721f7b0766a3b9ef748478ec1043cfdcb9edc78e23a89db489335f10e9", size = 9473105 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/dc/01/8f02145330355e2802b95f835afb4cf11ea503b779cd6136892d4940abc5/chainlit-2.0.5-py3-none-any.whl", hash = "sha256:30cd2c39a9393de047b4e64b3dcf84ca4f691cb61445d59ae9a29f8e1f1af006", size = 4709971 },
+    { url = "https://files.pythonhosted.org/packages/b8/ef/4408863d8110462bea8ee971a9f747ceeaafe3aa0404f0d7e85d6b06bb1c/chainlit-2.2.1-py3-none-any.whl", hash = "sha256:c2cc7d84386073899164b960371a9c046f175a9659763189cb9f1130b544b694", size = 9623188 },
 ]
 
 [[package]]
@@ -1977,6 +1979,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/aa/63/e53da845320b757bf
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c8/19/4ec628951a74043532ca2cf5d97b7b14863931476d117c471e8e2b1eb39f/urllib3-2.3.0-py3-none-any.whl", hash = "sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df", size = 128369 },
 ]
+
+[[package]]
+name = "uuid"
+version = "1.30"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ce/63/f42f5aa951ebf2c8dac81f77a8edcc1c218640a2a35a03b9ff2d4aa64c3d/uuid-1.30.tar.gz", hash = "sha256:1f87cc004ac5120466f36c5beae48b4c48cc411968eed0eaecd3da82aa96193f", size = 5811 }
 
 [[package]]
 name = "uvicorn"

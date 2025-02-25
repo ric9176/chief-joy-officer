@@ -1,9 +1,10 @@
+import uuid
 from typing import Annotated, TypedDict, Literal
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
-from langgraph.graph.message import MessagesState
+from langgraph.graph.message import MessagesState, add_messages
 from langgraph.prebuilt import ToolNode
-from langgraph.graph.message import add_messages
+from langgraph.checkpoint.memory import MemorySaver
 
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain.schema.runnable.config import RunnableConfig
@@ -62,12 +63,10 @@ tool_node = ToolNode(tool_belt)
 
 # Simple flow control - always go to final
 def should_continue(state):
-  last_message = state["messages"][-1]
-
-  if last_message.tool_calls:
-    return "action"
-
-  return END
+    last_message = state["messages"][-1]
+    if last_message.tool_calls:
+        return "action"
+    return END
 
 # Create the graph
 builder = StateGraph(AgentState)
@@ -84,25 +83,72 @@ builder.add_conditional_edges(
 )
 builder.add_edge("action", "agent")
 
-# Compile the graph
-compiled_graph = builder.compile()  # Changed variable name to be more explicit
+# Initialize memory saver for conversation persistence
+memory = MemorySaver()
 
-# Export the graph for visualization
-graph = compiled_graph  # This is what we'll import in the script
+# Compile the graph with memory
+graph = builder.compile(checkpointer=memory)
 
 @cl.on_chat_start
 async def on_chat_start():
-    await cl.Message("Hello! I'm your chief joy officer, here to help you with finding fun things to do in London! You can ask me anything but I'm particularly good at finding events and activities. What can I help you with today?").send()
+    # Generate and store a session ID
+    session_id = str(uuid.uuid4())
+    cl.user_session.set("session_id", session_id)
+    
+    # Initialize the conversation state with proper auth
+    cl.user_session.set("messages", [])
+    
+    # Initialize config using stored session ID
+    config = RunnableConfig(
+        configurable={
+            "thread_id": session_id,
+            "sessionId": session_id
+        }
+    )
+    
+    # Initialize empty state with auth
+    try:
+        await graph.ainvoke(
+            {"messages": [], "context": []},
+            config=config
+        )
+    except Exception as e:
+        print(f"Error initializing state: {str(e)}")
+    
+    await cl.Message(
+        content="Hello! I'm your chief joy officer, here to help you with finding fun things to do in London!",
+        author="Assistant"
+    ).send()
 
 @cl.on_message
 async def on_message(message: cl.Message):
-    # Create configuration with thread ID
-    config = {
-        "configurable": {
-            "thread_id": cl.context.session.id,
-            "checkpoint_ns": "default_namespace"
+    session_id = cl.user_session.get("session_id")
+    print(f"Session ID: {session_id}")
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        cl.user_session.set("session_id", session_id)
+    
+    config = RunnableConfig(
+        configurable={
+            "thread_id": session_id,
+            "checkpoint_ns": "default_namespace",
+            "sessionId": session_id
         }
-    }
+    )
+    
+    # Try to retrieve previous conversation state
+    try:
+        previous_state = await graph.aget_state(config)
+        if previous_state and previous_state.values:
+            previous_messages = previous_state.values.get('messages', [])
+            print("Found previous state with messages:", len(previous_messages))
+        else:
+            print("Previous state empty or invalid")
+            previous_messages = []
+        current_messages = previous_messages + [HumanMessage(content=message.content)]
+    except Exception as e:
+        print(f"Error retrieving previous state: {str(e)}")
+        current_messages = [HumanMessage(content=message.content)]
     
     # Setup callback handler and final answer message
     cb = cl.LangchainCallbackHandler()
@@ -113,8 +159,12 @@ async def on_message(message: cl.Message):
     
     # Stream the response
     async for chunk in graph.astream(
-        {"messages": [HumanMessage(content=message.content)], "context": []},
-        config=RunnableConfig(callbacks=[cb], **config)
+        {"messages": current_messages, "context": []},
+        config=RunnableConfig(
+            configurable={
+                "thread_id": session_id,
+            }
+        )
     ):
         for node, values in chunk.items():
             if node == "retrieve":

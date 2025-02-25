@@ -1,350 +1,146 @@
+# Chief Joy Officer (CJO)
+
+## Overview
+
+Chief Joy Officer (CJO) is an AI-powered agent designed to enhance social experiences by seamlessly integrating into group chats. It assists users in discovering and organizing social activities based on their interests, preferences, and locality.
+
+## Demo
+
+Check out the demo: [Loom Video](https://www.loom.com/share/3a8d6318c9d346b7a14681a0980c5aaa)
+Full write up here: https://docs.google.com/document/d/18een8Siwt-5lXyCZ79ovjxDOLFBP4eT2_aBlhFxUVTI/edit?usp=sharing
+
+## Problem Statement
+
+### The Challenge
+
+In group chats, organizing social events can be challenging as no one has the time to research activities, check schedules, and make bookings. Typically, one person takes on the responsibility of planning, which can be a burden.
+
+### The User Perspective
+
+- Social connection is vital, but busy schedules make it difficult to plan engaging activities.
+- Some groups have a "social architect," but if they get too busy, the quality of social time diminishes.
+- Our target users are individuals aged 25-40 who are busy with work but value quality time with friends.
+
+## Proposed Solution
+
+CJO is an AI assistant that acts as a group chat participant, proactively suggesting events and activities. It:
+
+- Learns group preferences through chat interactions.
+- Provides personalized recommendations.
+- Assists with booking and event details.
+- Enables effortless planning and decision-making within the group chat.
+
+## Technology Stack
+
+| Component               | Technology                                            |
+| ----------------------- | ----------------------------------------------------- |
+| **Orchestration Layer** | Langgraph                                             |
+| **Observability**       | Langsmith                                             |
+| **LLM**                 | 4o-mini                                               |
+| **Web Search Tool**     | Tavily (Firecrawl for advanced scraping)              |
+| **Embeddings Model**    | snowflake-arctic-embed-l                              |
+| **Vector Database**     | Qdrant                                                |
+| **Frontend UI**         | Chainlit (for POC), WhatsApp API integration (future) |
+| **Evaluations**         | Langsmith, Ragas                                      |
+
+## Agentic Reasoning
+
+CJO will use agentic reasoning to:
+
+- Enhance contextual understanding using Qdrant’s vector store.
+- Retrieve live event data via Tavily.
+- Implement long-term memory for personalized recommendations.
+
+## Data Sources & APIs
+
+| Source                                             | Purpose                                      |
+| -------------------------------------------------- | -------------------------------------------- |
+| [Time Out London](https://www.timeout.com/london/) | Provides event data for POC                  |
+| Tavily                                             | Web search for additional context            |
+| Firecrawl                                          | Scraping multiple sources (future expansion) |
+| Long-term Memory Storage                           | Tracks user preferences over time            |
+
+## Chunking Strategy
+
+Using **RecursiveCharacterTextSplitter** (Langchain) for structured text splitting:
+
+- Keeps paragraphs intact for better semantic coherence.
+- Adapts dynamically to text structure for optimized retrieval.
+
+## Prototype Development
+
+CJO was built by refactoring an existing Chainlit app **pythonic-rag** to integrate Langgraph and a ReAct pattern for **Agentic RAG + web search**.
+
+- **App Link**: [Pythonic-RAG on Hugging Face](https://huggingface.co/spaces/ric9176/pythonic-rag)
+- **GitHub Repo**: [Pythonic-RAG Repository](https://github.com/ric9176/pythonic-rag)
+
+## Performance Evaluation
+
+### Initial RAG Evaluation Metrics
+
+| Metric                | Score |
+| --------------------- | ----- |
+| Context Recall        | 0.620 |
+| Faithfulness          | 0.885 |
+| Factual Correctness   | 0.310 |
+| Answer Relevancy      | 0.762 |
+| Context Entity Recall | 0.393 |
+| Noise Sensitivity     | 0.300 |
+
+#### Key Takeaways
+
+- **Good**: Faithfulness and answer relevancy.
+- **Needs Improvement**: Factual correctness, entity recall, and context recall.
+- **Action Items**:
+  - Increase retrieval context (adjust `k` value).
+  - Optimize chunking strategy.
+  - Fine-tune the embedding model.
+  - Improve the system prompt.
+
+### Fine-Tuned Embeddings Model
+
+- **Model:** [Fine-tuned Arctic Embeddings](https://huggingface.co/ric9176/cjo-ft-v0)
+- **Implementation:** Integrated into the data ingestion pipeline.
+
+#### Performance Comparison (RAGAS Metrics)
+
+| Metric                | OpenAI | Base Arctic | Fine-tuned Arctic |
+| --------------------- | ------ | ----------- | ----------------- |
+| Context Recall        | 1.0    | 0.0         | 0.0               |
+| Faithfulness          | 0.0    | 0.0         | 1.0               |
+| Factual Correctness   | 0.67   | 0.0         | 0.0               |
+| Answer Relevancy      | 0.98   | 0.0         | 0.81              |
+| Context Entity Recall | 1.0    | 0.2         | 0.0               |
+| Noise Sensitivity     | 0.5    | 0.0         | 0.0               |
+
+#### Next Steps
+
+- Improve dataset size and periodic data ingestion.
+- Enhance short-term and long-term memory capabilities.
+- Enable passive observation and proactive suggestions.
+- Implement WhatsApp API integration.
+- Improve codebase modularity and maintainability.
+- Add voice interaction capabilities (time permitting).
+- Set up auto evaluations in Langsmith for benchmarking improvements.
+
+## Future Improvements
+
+- **Scalability:** Move to a cloud-hosted Qdrant instance.
+- **Memory Handling:** Implement SQL-based short-term memory and Qdrant for long-term.
+- **Automation:** Schedule ingestion pipelines and improve scraping capabilities.
+- **Agent Evaluations:** Benchmark tool selection accuracy.
+- **Testing:** Use structured SDG datasets for continuous evaluation.
+
+## Contributing
+
+Contributions are welcome! Please check out the GitHub repository for issue tracking and future enhancements.
+
 ---
-title: DeployPythonicRAG
-emoji: 📉
-colorFrom: blue
-colorTo: purple
-sdk: docker
-pinned: false
-license: apache-2.0
----
 
-# Deploying Pythonic Chat With Your Text File Application
+### Stay Connected
 
-In today's breakout rooms, we will be following the process that you saw during the challenge.
+- **GitHub**: [Pythonic-RAG Repository](https://github.com/ric9176/pythonic-rag)
+- **Hugging Face**: [Fine-Tuned Embeddings](https://huggingface.co/ric9176/cjo-ft-v0)
+- **Demo**: [Loom Video](https://www.loom.com/share/3a8d6318c9d346b7a14681a0980c5aaa)
 
-Today, we will repeat the same process - but powered by our Pythonic RAG implementation we created last week.
-
-You'll notice a few differences in the `app.py` logic - as well as a few changes to the `aimakerspace` package to get things working smoothly with Chainlit.
-
-> NOTE: If you want to run this locally - be sure to use `uv sync`, and then `uv run chainlit run app.py` to start the application outside of Docker.
-
-## Reference Diagram (It's Busy, but it works)
-
-![image](https://i.imgur.com/IaEVZG2.png)
-
-### Anatomy of a Chainlit Application
-
-[Chainlit](https://docs.chainlit.io/get-started/overview) is a Python package similar to Streamlit that lets users write a backend and a front end in a single (or multiple) Python file(s). It is mainly used for prototyping LLM-based Chat Style Applications - though it is used in production in some settings with 1,000,000s of MAUs (Monthly Active Users).
-
-The primary method of customizing and interacting with the Chainlit UI is through a few critical [decorators](https://blog.hubspot.com/website/decorators-in-python).
-
-> NOTE: Simply put, the decorators (in Chainlit) are just ways we can "plug-in" to the functionality in Chainlit.
-
-We'll be concerning ourselves with three main scopes:
-
-1. On application start - when we start the Chainlit application with a command like `chainlit run app.py`
-2. On chat start - when a chat session starts (a user opens the web browser to the address hosting the application)
-3. On message - when the users sends a message through the input text box in the Chainlit UI
-
-Let's dig into each scope and see what we're doing!
-
-### On Application Start:
-
-The first thing you'll notice is that we have the traditional "wall of imports" this is to ensure we have everything we need to run our application.
-
-```python
-import os
-from typing import List
-from chainlit.types import AskFileResponse
-from aimakerspace.text_utils import CharacterTextSplitter, TextFileLoader
-from aimakerspace.openai_utils.prompts import (
-    UserRolePrompt,
-    SystemRolePrompt,
-    AssistantRolePrompt,
-)
-from aimakerspace.openai_utils.embedding import EmbeddingModel
-from aimakerspace.vectordatabase import VectorDatabase
-from aimakerspace.openai_utils.chatmodel import ChatOpenAI
-import chainlit as cl
-```
-
-Next up, we have some prompt templates. As all sessions will use the same prompt templates without modification, and we don't need these templates to be specific per template - we can set them up here - at the application scope.
-
-```python
-system_template = """\
-Use the following context to answer a users question. If you cannot find the answer in the context, say you don't know the answer."""
-system_role_prompt = SystemRolePrompt(system_template)
-
-user_prompt_template = """\
-Context:
-{context}
-
-Question:
-{question}
-"""
-user_role_prompt = UserRolePrompt(user_prompt_template)
-```
-
-> NOTE: You'll notice that these are the exact same prompt templates we used from the Pythonic RAG Notebook in Week 1 Day 2!
-
-Following that - we can create the Python Class definition for our RAG pipeline - or _chain_, as we'll refer to it in the rest of this walkthrough.
-
-Let's look at the definition first:
-
-```python
-class RetrievalAugmentedQAPipeline:
-    def __init__(self, llm: ChatOpenAI(), vector_db_retriever: VectorDatabase) -> None:
-        self.llm = llm
-        self.vector_db_retriever = vector_db_retriever
-
-    async def arun_pipeline(self, user_query: str):
-        ### RETRIEVAL
-        context_list = self.vector_db_retriever.search_by_text(user_query, k=4)
-
-        context_prompt = ""
-        for context in context_list:
-            context_prompt += context[0] + "\n"
-
-        ### AUGMENTED
-        formatted_system_prompt = system_role_prompt.create_message()
-
-        formatted_user_prompt = user_role_prompt.create_message(question=user_query, context=context_prompt)
-
-
-        ### GENERATION
-        async def generate_response():
-            async for chunk in self.llm.astream([formatted_system_prompt, formatted_user_prompt]):
-                yield chunk
-
-        return {"response": generate_response(), "context": context_list}
-```
-
-Notice a few things:
-
-1. We have modified this `RetrievalAugmentedQAPipeline` from the initial notebook to support streaming.
-2. In essence, our pipeline is _chaining_ a few events together:
-   1. We take our user query, and chain it into our Vector Database to collect related chunks
-   2. We take those contexts and our user's questions and chain them into the prompt templates
-   3. We take that prompt template and chain it into our LLM call
-   4. We chain the response of the LLM call to the user
-3. We are using a lot of `async` again!
-
-Now, we're going to create a helper function for processing uploaded text files.
-
-First, we'll instantiate a shared `CharacterTextSplitter`.
-
-```python
-text_splitter = CharacterTextSplitter()
-```
-
-Now we can define our helper.
-
-```python
-def process_file(file: AskFileResponse):
-    import tempfile
-    import shutil
-
-    print(f"Processing file: {file.name}")
-
-    # Create a temporary file with the correct extension
-    suffix = f".{file.name.split('.')[-1]}"
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
-        # Copy the uploaded file content to the temporary file
-        shutil.copyfile(file.path, temp_file.name)
-        print(f"Created temporary file at: {temp_file.name}")
-
-        # Create appropriate loader
-        if file.name.lower().endswith('.pdf'):
-            loader = PDFLoader(temp_file.name)
-        else:
-            loader = TextFileLoader(temp_file.name)
-
-        try:
-            # Load and process the documents
-            documents = loader.load_documents()
-            texts = text_splitter.split_texts(documents)
-            return texts
-        finally:
-            # Clean up the temporary file
-            try:
-                os.unlink(temp_file.name)
-            except Exception as e:
-                print(f"Error cleaning up temporary file: {e}")
-```
-
-Simply put, this downloads the file as a temp file, we load it in with `TextFileLoader` and then split it with our `TextSplitter`, and returns that list of strings!
-
-#### ❓ QUESTION #1:
-
-Why do we want to support streaming? What about streaming is important, or useful?
-
-- Streaming is important because it allows us to send the response to the user in chunks - rather than waiting for the entire response to be generated. This is useful because it allows the user to see the response as it is being generated - and it allows us to use the response in a streaming fashion.
-
-### On Chat Start:
-
-The next scope is where "the magic happens". On Chat Start is when a user begins a chat session. This will happen whenever a user opens a new chat window, or refreshes an existing chat window.
-
-You'll see that our code is set-up to immediately show the user a chat box requesting them to upload a file.
-
-```python
-while files == None:
-        files = await cl.AskFileMessage(
-            content="Please upload a Text or PDF file to begin!",
-            accept=["text/plain", "application/pdf"],
-            max_size_mb=2,
-            timeout=180,
-        ).send()
-```
-
-Once we've obtained the text file - we'll use our processing helper function to process our text!
-
-After we have processed our text file - we'll need to create a `VectorDatabase` and populate it with our processed chunks and their related embeddings!
-
-```python
-vector_db = VectorDatabase()
-vector_db = await vector_db.abuild_from_list(texts)
-```
-
-Once we have that piece completed - we can create the chain we'll be using to respond to user queries!
-
-```python
-retrieval_augmented_qa_pipeline = RetrievalAugmentedQAPipeline(
-        vector_db_retriever=vector_db,
-        llm=chat_openai
-    )
-```
-
-Now, we'll save that into our user session!
-
-> NOTE: Chainlit has some great documentation about [User Session](https://docs.chainlit.io/concepts/user-session).
-
-#### ❓ QUESTION #2:
-
-Why are we using User Session here? What about Python makes us need to use this? Why not just store everything in a global variable?
-
-- We need to persist the data in memory for the lifecycle of a user session on a per user basis. Using a global variable not work as if more than one user is using the application - they will all overwrite each other's data.
-
-### On Message
-
-First, we load our chain from the user session:
-
-```python
-chain = cl.user_session.get("chain")
-```
-
-Then, we run the chain on the content of the message - and stream it to the front end - that's it!
-
-```python
-msg = cl.Message(content="")
-result = await chain.arun_pipeline(message.content)
-
-async for stream_resp in result["response"]:
-    await msg.stream_token(stream_resp)
-```
-
-### 🎉
-
-With that - you've created a Chainlit application that moves our Pythonic RAG notebook to a Chainlit application!
-
-## Deploying the Application to Hugging Face Space
-
-Due to the way the repository is created - it should be straightforward to deploy this to a Hugging Face Space!
-
-> NOTE: If you wish to go through the local deployments using `uv run chainlit run app.py` and Docker - please feel free to do so!
-
-<details>
-    <summary>Creating a Hugging Face Space</summary>
-
-1.  Navigate to the `Spaces` tab.
-
-![image](https://i.imgur.com/aSMlX2T.png)
-
-2. Click on `Create new Space`
-
-![image](https://i.imgur.com/YaSSy5p.png)
-
-3. Create the Space by providing values in the form. Make sure you've selected "Docker" as your Space SDK.
-
-![image](https://i.imgur.com/6h9CgH6.png)
-
-</details>
-
-<details>
-    <summary>Adding this Repository to the Newly Created Space</summary>
-
-1. Collect the SSH address from the newly created Space.
-
-![image](https://i.imgur.com/Oag0m8E.png)
-
-> NOTE: The address is the component that starts with `git@hf.co:spaces/`.
-
-2. Use the command:
-
-```bash
-git remote add hf HF_SPACE_SSH_ADDRESS_HERE
-```
-
-3. Use the command:
-
-```bash
-git pull hf main --no-rebase --allow-unrelated-histories -X ours
-```
-
-4. Use the command:
-
-```bash
-git add .
-```
-
-5. Use the command:
-
-```bash
-git commit -m "Deploying Pythonic RAG"
-```
-
-6. Use the command:
-
-```bash
-git push hf main
-```
-
-7. The Space should automatically build as soon as the push is completed!
-
-> NOTE: The build will fail before you complete the following steps!
-
-</details>
-
-<details>
-    <summary>Adding OpenAI Secrets to the Space</summary>
-
-1. Navigate to your Space settings.
-
-![image](https://i.imgur.com/zh0a2By.png)
-
-2. Navigate to `Variables and secrets` on the Settings page and click `New secret`:
-
-![image](https://i.imgur.com/g2KlZdz.png)
-
-3. In the `Name` field - input `OPENAI_API_KEY` in the `Value (private)` field, put your OpenAI API Key.
-
-![image](https://i.imgur.com/eFcZ8U3.png)
-
-4. The Space will begin rebuilding!
-
-</details>
-
-## 🎉
-
-You just deployed Pythonic RAG!
-
-Try uploading a text file and asking some questions!
-
-#### ❓ Discussion Question #1:
-
-Upload a PDF file of the recent DeepSeek-R1 paper and ask the following questions:
-
-1. What is RL and how does it help reasoning?
-2. What is the difference between DeepSeek-R1 and DeepSeek-R1-Zero?
-3. What is this paper about?
-
-Does this application pass your vibe check? Are there any immediate pitfalls you're noticing?
-
-- It performs well on the first question or when specifically asking about the paper using the title. However, it doesn't perform well when the questions are more ambiguous such as "What is this paper about?". It also needed some nudging to get the answer to the second question, so not fully passing the vibe check.
-
-## 🚧 CHALLENGE MODE 🚧
-
-For the challenge mode, please instead create a simple FastAPI backend with a simple React (or any other JS framework) frontend.
-
-You can use the same prompt templates and RAG pipeline as we did here - but you'll need to modify the code to work with FastAPI and React.
-
-Deploy this application to Hugging Face Spaces!
+Let's make social planning effortless with AI! 🚀

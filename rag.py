@@ -29,8 +29,6 @@ def create_rag_pipeline(collection_name: str = "rag_collection"):
     # Fine tuned embedding model
     embedding_model = HuggingFaceEmbeddings(
         model_name="ric9176/cjo-ft-v0", 
-        model_kwargs={'device': 'cpu'},  # Or 'cuda' if using GPU
-        encode_kwargs={'normalize_embeddings': True}  # Optional: normalize the embeddings
     )
     # embedding_dim = 1536  # Dimension for text-embedding-3-small
     embedding_dim = 1024  # Dimension for Snowflake/snowflake-arctic-embed-l
@@ -63,7 +61,7 @@ def create_rag_pipeline(collection_name: str = "rag_collection"):
     )
 
     # Create retriever
-    retriever = vector_store.as_retriever(search_kwargs={"k": 2})
+    retriever = vector_store.as_retriever(search_kwargs={"k": 5})
 
     return {
         "vector_store": vector_store,

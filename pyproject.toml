@@ -5,7 +5,7 @@ description = "Simple Pythonic RAG App"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "chainlit>=2.0.4",
+    "chainlit>=2.2.1",
     "numpy>=2.2.2",
     "openai>=1.59.9",
     "pydantic==2.10.1",
@@ -20,5 +20,6 @@ dependencies = [
     "tavily-python>=0.3.1",
     "typing-extensions>=4.9.0",
     "beautifulsoup4==4.13.3",
-    "sentence-transformers==3.4.1"
+    "sentence-transformers==3.4.1",
+    "uuid==1.30"
 ]

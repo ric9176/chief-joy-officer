@@ -26,7 +26,8 @@ async def on_chat_start():
     config = RunnableConfig(
         configurable={
             "thread_id": session_id,
-            "sessionId": session_id
+            "session_id": session_id,
+            "checkpoint_ns": session_id
         }
     )
     
@@ -34,10 +35,18 @@ async def on_chat_start():
     try:
         async with get_checkpointer(SHORT_TERM_MEMORY_DB_PATH) as saver:
             graph = await create_agent_graph(saver)
-            initial_state = AgentState(messages=[], context=[])
+            initial_state = AgentState(
+                messages=[], 
+                context=[]
+            )
+            
             await graph.ainvoke(initial_state, config=config)
-            # Store initial state as a serializable dict
-            cl.user_session.set("last_state", {"messages": [], "context": []})
+            
+            # Store initial state
+            cl.user_session.set("last_state", {
+                "messages": [], 
+                "context": []
+            })
     except Exception as e:
         print(f"Error initializing state: {str(e)}")
     
@@ -67,14 +76,14 @@ async def on_message(message: cl.Message):
     config = RunnableConfig(
         configurable={
             "thread_id": session_id,
-            "checkpoint_ns": session_id,  # Use session_id as namespace
-            "sessionId": session_id
+            "session_id": session_id,
+            "checkpoint_ns": session_id
         }
     )
     
     try:
         async with get_checkpointer(SHORT_TERM_MEMORY_DB_PATH) as saver:
-            # Create graph with SQLite memory
+            # Create graph with memory
             graph = await create_agent_graph(saver)
             
             # Get the last state or create new one

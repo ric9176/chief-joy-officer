@@ -80,8 +80,8 @@ def call_model(state: AgentState, config: RunnableConfig, store: BaseStore):
     messages = [
         SystemMessage(content=SYSTEM_PROMPT.format(memory=memory_content))
     ] + state["messages"]
-    
-    response = model.invoke(messages)
+    tool_calling_model = model.bind_tools(tool_belt)
+    response = tool_calling_model.invoke(messages)
     return {"messages": [response]}
 
 def update_memory(state: AgentState, config: RunnableConfig, store: BaseStore):
@@ -100,7 +100,7 @@ def update_memory(state: AgentState, config: RunnableConfig, store: BaseStore):
     store.put(namespace, "user_memory", {"memory": new_memory.content})
     return state
 
-def should_continue(state: AgentState) -> Literal["action", "write_memory", END]:
+def should_continue(state: AgentState) -> Literal["action", "write_memory"]:
     """Determine the next node in the graph."""
     if not state["messages"]:
         return END
@@ -114,15 +114,17 @@ def should_continue(state: AgentState) -> Literal["action", "write_memory", END]
     # Handle tool calls
     if hasattr(last_message, "additional_kwargs") and last_message.additional_kwargs.get("tool_calls"):
         return "action"
+
+    return "write_memory"
     
-    # Handle memory operations for human messages
-    if last_human_message:
+    # # Handle memory operations for human messages
+    # if last_human_message:
+           
+    #     # Write memory for longer messages that might contain personal information
+    #     if len(last_human_message.content.split()) > 3:
+    #         return "write_memory"
             
-        # Write memory for longer messages that might contain personal information
-        if len(last_human_message.content.split()) > 3:
-            return "write_memory"
-            
-    return END
+    # return END
 
 # Define the memory creation prompt
 MEMORY_CREATION_PROMPT = """"You are collecting information about the user to personalize your responses.

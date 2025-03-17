@@ -26,8 +26,7 @@ def create_graph_builder():
     # Set entry point
     builder.set_entry_point("agent")
 
-    builder.add_edge("agent", "write_memory")
-    builder.add_edge("write_memory", END)
+    # builder.add_edge("agent", "write_memory")
 
     # Add conditional edges from agent
     builder.add_conditional_edges(
@@ -36,12 +35,12 @@ def create_graph_builder():
         {
             "action": "action",
             "write_memory": "write_memory",
-            END: END
         }
     )
     
     # Connect action back to agent
     builder.add_edge("action", "agent")
+    builder.add_edge("write_memory", END)
     
     return builder
 

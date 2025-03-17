@@ -9,7 +9,6 @@ from agent.utils.state import AgentState
 from agent.utils.nodes import (
     call_model,
     tool_node,
-    read_memory,
     write_memory,
     should_continue
 )
@@ -22,7 +21,6 @@ def create_graph_builder():
     # Add nodes
     builder.add_node("agent", call_model)
     builder.add_node("action", tool_node)
-    builder.add_node("read_memory", read_memory)
     builder.add_node("write_memory", write_memory)
 
     # Set entry point
@@ -37,7 +35,6 @@ def create_graph_builder():
         should_continue,
         {
             "action": "action",
-            "read_memory": "read_memory",
             "write_memory": "write_memory",
             END: END
         }
@@ -45,9 +42,6 @@ def create_graph_builder():
     
     # Connect action back to agent
     builder.add_edge("action", "agent")
-    
-    # Memory operations should end after completion
-    builder.add_edge("read_memory", "agent")
     
     return builder
 

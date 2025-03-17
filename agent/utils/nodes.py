@@ -100,7 +100,7 @@ def update_memory(state: AgentState, config: RunnableConfig, store: BaseStore):
     store.put(namespace, "user_memory", {"memory": new_memory.content})
     return state
 
-def should_continue(state: AgentState) -> Literal["action", "read_memory", "write_memory", END]:
+def should_continue(state: AgentState) -> Literal["action", "write_memory", END]:
     """Determine the next node in the graph."""
     if not state["messages"]:
         return END
@@ -121,24 +121,8 @@ def should_continue(state: AgentState) -> Literal["action", "read_memory", "writ
         # Write memory for longer messages that might contain personal information
         if len(last_human_message.content.split()) > 3:
             return "write_memory"
-        # Read memory for short queries to ensure personalized responses
-        else:
-            return "read_memory"
             
     return END
-
-def read_memory(state: AgentState, config: RunnableConfig, store: BaseStore):
-    """Read and apply memory context without updating it."""
-    user_id = config["configurable"].get("session_id", "default")
-    namespace = ("memory", user_id)
-    existing_memory = store.get(namespace, "user_memory")
-    
-    if existing_memory:
-        memory_content = existing_memory.value.get('memory')
-        # Add memory context to state for next model call
-        state["memory_context"] = memory_content
-    
-    return state
 
 # Define the memory creation prompt
 MEMORY_CREATION_PROMPT = """"You are collecting information about the user to personalize your responses.
@@ -194,34 +178,6 @@ async def write_memory(state: AgentState, config: RunnableConfig, store: BaseSto
 
 # Initialize tool node
 tool_node = ToolNode(tool_belt)
-
-def should_call_memory(state: AgentState) -> Literal["update_memory", "end"]:
-    """
-    Determine if we should update memory based on the conversation state.
-    
-    Rules for updating memory:
-    1. Only update after human messages (not tool responses)
-    2. Update if the message might contain personal information
-    3. Don't update for simple queries or acknowledgments
-    """
-    if not state["messages"]:
-        return "end"
-        
-    last_message = state["messages"][-1]
-    
-    # Skip memory update for tool calls
-    if hasattr(last_message, "additional_kwargs") and last_message.additional_kwargs.get("tool_calls"):
-        return "agent"
-    
-    # Skip memory update for very short messages (likely acknowledgments)
-    if isinstance(last_message, HumanMessage) and len(last_message.content.split()) <= 3:
-        return "agent"
-    
-    # Update memory for human messages that might contain personal information
-    if isinstance(last_message, HumanMessage):
-        return "update_memory"
-    
-    return "agent"
 
 # def route_message(state: MessagesState, config: RunnableConfig, store: BaseStore) -> Literal[END, "update_todos", "update_instructions", "update_profile"]:
     

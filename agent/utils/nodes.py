@@ -176,10 +176,7 @@ async def write_memory(state: AgentState, config: RunnableConfig, store: BaseSto
     await store.aput(namespace, "user_memory", {"memory": new_memory.content})
     
     # Update the state with the new memory
-    return {
-        **state,
-        "user_memories": {"memory": new_memory.content}
-    }
+    return state
 
 # Initialize tool node
 tool_node = ToolNode(tool_belt)

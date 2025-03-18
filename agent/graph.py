@@ -26,7 +26,6 @@ def create_graph_builder():
     # Set entry point
     builder.set_entry_point("agent")
 
-    # builder.add_edge("agent", "write_memory")
 
     # Add conditional edges from agent
     builder.add_conditional_edges(

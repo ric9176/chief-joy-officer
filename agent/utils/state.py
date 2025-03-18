@@ -1,4 +1,4 @@
-from typing import Annotated, TypedDict
+from typing import Annotated, TypedDict, Optional
 from langgraph.graph.message import add_messages
 
 class AgentState(TypedDict):

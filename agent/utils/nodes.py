@@ -175,7 +175,7 @@ async def write_memory(state: AgentState, config: RunnableConfig, store: BaseSto
     # Store the updated memory using async interface
     await store.aput(namespace, "user_memory", {"memory": new_memory.content})
     
-    
+    # Update the state with the new memory
     return state
 
 # Initialize tool node

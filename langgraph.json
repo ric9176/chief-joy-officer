@@ -1,7 +1,7 @@
 {
   "dependencies": ".",
   "graphs": {
-    "agent": "agent:graph"
+    "agent": "agent:langgraph_studio_graph"
   },
   "env": ".env"
 }
